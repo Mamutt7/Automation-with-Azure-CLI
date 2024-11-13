@@ -1,10 +1,68 @@
+# Automation with Azure CLI
+
 <p align="center">
   <img src="https://github.com/user-attachments/assets/dcd0ebb3-1a49-4d9f-b86b-8ebea9fbd561" alt="Azure CLI Logo" width="200"/>
 </p>
 
-# Automation with Azure CLI
-
 This project demonstrates how to automate the deployment of a Virtual Machine (VM) in Azure using Azure CLI and Bash scripting. The process involves creating essential resources such as a resource group, virtual network, and network security group, and automating VM size selection based on availability.
+
+---
+
+## Script for Automated VM Deployment
+
+The following Bash script automates the deployment of a VM in Azure, checking for an available VM size in the specified region (`centralus`) and creating the VM once an available size is found.
+
+```bash
+#!/bin/bash
+
+# Set up your variables
+RESOURCE_GROUP="Automationlabrg"
+LOCATION="centralus"
+VM_NAME="AutomationVM"
+ADMIN_USERNAME="labuser"
+VNET_NAME="AutomationlabVnet"
+SUBNET_NAME="AutomationlabSubnet"
+NSG_NAME="AutomationlabSubnet"
+PUBLIC_IP_NAME="AutomationVMCentralPublicIP"  # Unique name to avoid conflicts
+
+# List of VM sizes to test
+VM_SIZES=(
+    "Standard_B1s" "Standard_B2ms" "Standard_D2s_v3" "Standard_DS1_v2" 
+    "Standard_F2s_v2" "Standard_A2_v2" "Standard_E2s_v3" "Standard_D4s_v3" 
+    "Standard_F4s_v2" "Standard_E4s_v3" "Standard_D8s_v3" "Standard_F8s_v2"
+    "Standard_B1ms" "Standard_B2s" "Standard_B2m" "Standard_D16s_v3" 
+    "Standard_E8s_v3" "Standard_F16s_v2" "Standard_DS3_v2" "Standard_D2_v2" 
+    "Standard_E16s_v3" "Standard_M64ms" "Standard_G5" "Standard_L8s_v2"
+)
+
+# Loop through VM sizes to test availability
+for SIZE in "${VM_SIZES[@]}"; do
+    echo "Testing VM size: $SIZE in region: $LOCATION"
+    
+    # Try creating the VM with the current size
+    az vm create \
+      --resource-group $RESOURCE_GROUP \
+      --name $VM_NAME \
+      --location $LOCATION \
+      --size $SIZE \
+      --image Ubuntu2204 \
+      --vnet-name $VNET_NAME \
+      --subnet $SUBNET_NAME \
+      --nsg $NSG_NAME \
+      --admin-username $ADMIN_USERNAME \
+      --public-ip-address $PUBLIC_IP_NAME \
+      --generate-ssh-keys \
+      --no-wait
+
+    # Check if the VM was created successfully
+    if [ $? -eq 0 ]; then
+        echo "VM successfully created with size $SIZE in region $LOCATION"
+        break
+    else
+        echo "VM size $SIZE is not available in $LOCATION. Trying the next size..."
+    fi
+done
+```
 
 ---
 
@@ -45,8 +103,3 @@ The script successfully deployed a VM using the first available size, `Standard_
 
 ## What I Learned
 This project enhanced my skills in using Azure CLI for automated cloud resource management, handling capacity constraints programmatically, and deploying secure, efficient cloud infrastructure.
-
----
-
-## Additional Information
-To run this automation project, you can find the full script in this repository, and feel free to adapt it to other regions or configurations as needed.
